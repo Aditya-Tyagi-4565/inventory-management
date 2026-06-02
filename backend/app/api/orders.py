@@ -23,7 +23,24 @@ router = APIRouter(
 def get_orders(
     db: Session = Depends(get_db)
 ):
-    return db.query(Order).all()
+
+    orders = db.query(Order).all()
+
+    result = []
+
+    for order in orders:
+
+        customer = db.query(Customer).filter(
+            Customer.id == order.customer_id
+        ).first()
+
+        result.append({
+            "id": order.id,
+            "customer_name": customer.name if customer else "Unknown",
+            "total_amount": order.total_amount
+        })
+
+    return result
 
 
 @router.post("/")

@@ -9,7 +9,7 @@ from app.api.products import router as product_router
 from app.api.customers import router as customer_router
 from app.api.orders import router as order_router
 from app.api.auth import router as auth_router
-
+from app.api.dashboard import router as dashboard_router
 Base.metadata.create_all(
     bind=engine
 )
@@ -33,7 +33,7 @@ app.include_router(auth_router)
 app.include_router(product_router)
 app.include_router(customer_router)
 app.include_router(order_router)
-
+app.include_router(dashboard_router)
 
 @app.get("/")
 def root():

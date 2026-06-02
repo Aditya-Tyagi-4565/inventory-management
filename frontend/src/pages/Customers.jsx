@@ -20,6 +20,9 @@ export default function Customers() {
   const [customers, setCustomers] =
     useState([]);
 
+  const [editingId, setEditingId] =
+    useState(null);
+
   const [form, setForm] =
     useState({
       name: "",
@@ -29,12 +32,20 @@ export default function Customers() {
 
   const loadCustomers = async () => {
 
-    const response =
-      await api.get("/customers/");
+    try {
 
-    setCustomers(
-      response.data
-    );
+      const response =
+        await api.get("/customers/");
+
+      setCustomers(
+        response.data
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
   };
 
   useEffect(() => {
@@ -62,7 +73,38 @@ export default function Customers() {
       } catch (error) {
 
         alert(
-          error?.response?.data?.detail
+          error?.response?.data?.detail ||
+          "Failed to create customer"
+        );
+
+      }
+    };
+
+  const updateCustomer =
+    async () => {
+
+      try {
+
+        await api.put(
+          `/customers/${editingId}`,
+          form
+        );
+
+        setEditingId(null);
+
+        setForm({
+          name: "",
+          email: "",
+          phone: ""
+        });
+
+        loadCustomers();
+
+      } catch (error) {
+
+        alert(
+          error?.response?.data?.detail ||
+          "Failed to update customer"
         );
 
       }
@@ -71,11 +113,43 @@ export default function Customers() {
   const deleteCustomer =
     async (id) => {
 
-      await api.delete(
-        `/customers/${id}`
+      if (
+        !window.confirm(
+          "Delete customer?"
+        )
+      ) {
+        return;
+      }
+
+      try {
+
+        await api.delete(
+          `/customers/${id}`
+        );
+
+        loadCustomers();
+
+      } catch (error) {
+
+        console.error(error);
+
+      }
+    };
+
+  const editCustomer =
+    (customer) => {
+
+      setEditingId(
+        customer.id
       );
 
-      loadCustomers();
+      setForm({
+        name: customer.name,
+        email: customer.email,
+        phone:
+          customer.phone || ""
+      });
+
     };
 
   return (
@@ -134,10 +208,16 @@ export default function Customers() {
         <Button
           variant="contained"
           onClick={
-            createCustomer
+            editingId
+              ? updateCustomer
+              : createCustomer
           }
         >
-          Add Customer
+          {
+            editingId
+              ? "Update Customer"
+              : "Add Customer"
+          }
         </Button>
 
       </Stack>
@@ -153,6 +233,10 @@ export default function Customers() {
             <TableRow>
 
               <TableCell>
+                ID
+              </TableCell>
+
+              <TableCell>
                 Name
               </TableCell>
 
@@ -165,7 +249,7 @@ export default function Customers() {
               </TableCell>
 
               <TableCell>
-                Action
+                Actions
               </TableCell>
 
             </TableRow>
@@ -176,30 +260,38 @@ export default function Customers() {
 
             {customers.map(
               (customer) => (
+
                 <TableRow
-                  key={
-                    customer.id
-                  }
+                  key={customer.id}
                 >
+
                   <TableCell>
-                    {
-                      customer.name
-                    }
+                    {customer.id}
                   </TableCell>
 
                   <TableCell>
-                    {
-                      customer.email
-                    }
+                    {customer.name}
                   </TableCell>
 
                   <TableCell>
-                    {
-                      customer.phone
-                    }
+                    {customer.email}
                   </TableCell>
 
                   <TableCell>
+                    {customer.phone}
+                  </TableCell>
+
+                  <TableCell>
+
+                    <Button
+                      onClick={() =>
+                        editCustomer(
+                          customer
+                        )
+                      }
+                    >
+                      Edit
+                    </Button>
 
                     <Button
                       color="error"
@@ -215,6 +307,7 @@ export default function Customers() {
                   </TableCell>
 
                 </TableRow>
+
               )
             )}
 
@@ -223,7 +316,6 @@ export default function Customers() {
         </Table>
 
       </TableContainer>
-
     </>
   );
 }

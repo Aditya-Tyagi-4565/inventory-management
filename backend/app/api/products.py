@@ -69,3 +69,40 @@ def delete_product(
     return {
         "message": "Product deleted"
     }
+@router.put("/{product_id}")
+def update_product(
+    product_id: int,
+    product: ProductCreate,
+    db: Session = Depends(get_db)
+):
+
+    db_product = db.query(Product).filter(
+        Product.id == product_id
+    ).first()
+
+    if not db_product:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found"
+        )
+
+    existing_sku = db.query(Product).filter(
+        Product.sku == product.sku,
+        Product.id != product_id
+    ).first()
+
+    if existing_sku:
+        raise HTTPException(
+            status_code=400,
+            detail="SKU already exists"
+        )
+
+    db_product.sku = product.sku
+    db_product.name = product.name
+    db_product.price = product.price
+    db_product.stock_quantity = product.stock_quantity
+
+    db.commit()
+    db.refresh(db_product)
+
+    return db_product

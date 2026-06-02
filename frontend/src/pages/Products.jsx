@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import api from "../services/api";
 
 import {
@@ -18,28 +17,26 @@ import {
 
 export default function Products() {
 
-  const [products, setProducts] =
-    useState([]);
+  const [products, setProducts] = useState([]);
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
-  const [form, setForm] =
-    useState({
-      sku: "",
-      name: "",
-      price: "",
-      stock_quantity: ""
-    });
+  const [editingId, setEditingId] = useState(null);
+
+  const [form, setForm] = useState({
+    sku: "",
+    name: "",
+    price: "",
+    stock_quantity: ""
+  });
 
   const loadProducts = async () => {
-
-    const response =
-      await api.get("/products/");
-
-    setProducts(
-      response.data
-    );
+    try {
+      const response = await api.get("/products/");
+      setProducts(response.data);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   useEffect(() => {
@@ -48,43 +45,110 @@ export default function Products() {
 
   const createProduct = async () => {
 
-    await api.post(
-      "/products/",
-      {
-        sku: form.sku,
-        name: form.name,
-        price: Number(form.price),
-        stock_quantity:
-          Number(form.stock_quantity)
-      }
-    );
+    try {
 
-    setForm({
-      sku: "",
-      name: "",
-      price: "",
-      stock_quantity: ""
-    });
+      await api.post(
+        "/products/",
+        {
+          sku: form.sku,
+          name: form.name,
+          price: Number(form.price),
+          stock_quantity: Number(form.stock_quantity)
+        }
+      );
 
-    loadProducts();
+      setForm({
+        sku: "",
+        name: "",
+        price: "",
+        stock_quantity: ""
+      });
+
+      loadProducts();
+
+    } catch (error) {
+
+      alert(
+        error?.response?.data?.detail ||
+        "Failed to create product"
+      );
+
+    }
   };
 
-  const deleteProduct =
-    async (id) => {
+  const updateProduct = async () => {
 
-      if (
-        !window.confirm(
-          "Delete product?"
-        )
+    try {
+
+      await api.put(
+        `/products/${editingId}`,
+        {
+          sku: form.sku,
+          name: form.name,
+          price: Number(form.price),
+          stock_quantity: Number(form.stock_quantity)
+        }
+      );
+
+      setEditingId(null);
+
+      setForm({
+        sku: "",
+        name: "",
+        price: "",
+        stock_quantity: ""
+      });
+
+      loadProducts();
+
+    } catch (error) {
+
+      alert(
+        error?.response?.data?.detail ||
+        "Failed to update product"
+      );
+
+    }
+  };
+
+  const deleteProduct = async (id) => {
+
+    if (
+      !window.confirm(
+        "Delete product?"
       )
-        return;
+    ) {
+      return;
+    }
+
+    try {
 
       await api.delete(
         `/products/${id}`
       );
 
       loadProducts();
-    };
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+  };
+
+  const editProduct = (product) => {
+
+    setEditingId(product.id);
+
+    setForm({
+      sku: product.sku,
+      name: product.name,
+      price: product.price,
+      stock_quantity:
+        product.stock_quantity
+    });
+
+  };
 
   const filteredProducts =
     products.filter((p) =>
@@ -111,14 +175,14 @@ export default function Products() {
           mb: 4
         }}
       >
+
         <TextField
           label="SKU"
           value={form.sku}
           onChange={(e) =>
             setForm({
               ...form,
-              sku:
-                e.target.value
+              sku: e.target.value
             })
           }
         />
@@ -129,8 +193,7 @@ export default function Products() {
           onChange={(e) =>
             setForm({
               ...form,
-              name:
-                e.target.value
+              name: e.target.value
             })
           }
         />
@@ -142,18 +205,15 @@ export default function Products() {
           onChange={(e) =>
             setForm({
               ...form,
-              price:
-                e.target.value
+              price: e.target.value
             })
           }
         />
 
         <TextField
-          label="Stock"
+          label="Stock Quantity"
           type="number"
-          value={
-            form.stock_quantity
-          }
+          value={form.stock_quantity}
           onChange={(e) =>
             setForm({
               ...form,
@@ -166,11 +226,18 @@ export default function Products() {
         <Button
           variant="contained"
           onClick={
-            createProduct
+            editingId
+              ? updateProduct
+              : createProduct
           }
         >
-          Add Product
+          {
+            editingId
+              ? "Update Product"
+              : "Add Product"
+          }
         </Button>
+
       </Stack>
 
       <TextField
@@ -188,60 +255,52 @@ export default function Products() {
       <TableContainer
         component={Paper}
       >
+
         <Table>
 
           <TableHead>
+
             <TableRow>
-              <TableCell>
-                SKU
-              </TableCell>
 
-              <TableCell>
-                Name
-              </TableCell>
+              <TableCell>ID</TableCell>
 
-              <TableCell>
-                Price
-              </TableCell>
+              <TableCell>SKU</TableCell>
 
-              <TableCell>
-                Stock
-              </TableCell>
+              <TableCell>Name</TableCell>
 
-              <TableCell>
-                Action
-              </TableCell>
+              <TableCell>Price</TableCell>
+
+              <TableCell>Stock</TableCell>
+
+              <TableCell>Actions</TableCell>
+
             </TableRow>
+
           </TableHead>
 
           <TableBody>
 
             {filteredProducts.map(
-              (
-                product
-              ) => (
+              (product) => (
+
                 <TableRow
-                  key={
-                    product.id
-                  }
+                  key={product.id}
                 >
+
                   <TableCell>
-                    {
-                      product.sku
-                    }
+                    {product.id}
                   </TableCell>
 
                   <TableCell>
-                    {
-                      product.name
-                    }
+                    {product.sku}
                   </TableCell>
 
                   <TableCell>
-                    ₹
-                    {
-                      product.price
-                    }
+                    {product.name}
+                  </TableCell>
+
+                  <TableCell>
+                    ₹{product.price}
                   </TableCell>
 
                   <TableCell>
@@ -251,6 +310,16 @@ export default function Products() {
                   </TableCell>
 
                   <TableCell>
+
+                    <Button
+                      onClick={() =>
+                        editProduct(
+                          product
+                        )
+                      }
+                    >
+                      Edit
+                    </Button>
 
                     <Button
                       color="error"
@@ -266,12 +335,14 @@ export default function Products() {
                   </TableCell>
 
                 </TableRow>
+
               )
             )}
 
           </TableBody>
 
         </Table>
+
       </TableContainer>
     </>
   );
